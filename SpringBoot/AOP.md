@@ -4,7 +4,7 @@ AOP(Aspect-Oriented Programming, 관점 지향 프로그래밍)는 **비즈니�
 
 #### AOP란 무엇인가?
 
-AOP는 **프로그램의 여러 부분에 공통적으로 사용하는 기능(횡단 관심사)**을 핵심 로직과 분리하여 **재사용성과 유지 보수성을 높이는 방법**입니다. 전통적인 객체 지향 프로그래밍(OOP)에서는 핵심 비즈니스 로직과 로깅, 보안, 예외 처리와 같은 부가적인 기능이 뒤섞이게 되면서 코드가 복잡해지는 문제가 생깁니다. AOP는 이러한 공통 기능을 별도의 모듈로 관리함으로써 **핵심 비즈니스 로직에 집중할 수 있도록** 도와줍니다.
+AOP는 \*\*프로그램의 여러 부분에 공통적으로 사용하는 기능(횡단 관심사)\*\*을 핵심 로직과 분리하여 **재사용성과 유지 보수성을 높이는 방법**입니다. 전통적인 객체 지향 프로그래밍(OOP)에서는 핵심 비즈니스 로직과 로깅, 보안, 예외 처리와 같은 부가적인 기능이 뒤섞이게 되면서 코드가 복잡해지는 문제가 생깁니다. AOP는 이러한 공통 기능을 별도의 모듈로 관리함으로써 **핵심 비즈니스 로직에 집중할 수 있도록** 도와줍니다.
 
 AOP의 핵심 개념은 **Aspect**입니다. Aspect는 횡단 관심사를 모듈화한 것으로, 이를 통해 특정 기능을 별도로 분리해 관리할 수 있습니다. 스프링에서는 AOP를 통해 메소드의 실행 전후나 예외 발생 시점에 특정 로직을 쉽게 적용할 수 있습니다.
 
@@ -55,7 +55,40 @@ public class LoggingAspect {
     }
 }
 ```
+
 위 코드에서 `@Aspect` 어노테이션을 사용해 Aspect를 정의했습니다. `@Pointcut`은 실행될 메소드를 지정하고, `@Around` Advice를 통해 지정된 메소드가 실행될 때마다 그 실행 시간을 기록하는 로직을 추가했습니다. 이렇게 하면 모든 서비스 메소드의 실행 시간을 효율적으로 로깅할 수 있습니다.
+
+만약 실무에서 특정 진단을 위한 서비스 기능 로그를 데이터베이스에 저장하고 싶다면, AOP를 사용하여 이를 구현할 수 있습니다. 예를 들어, 아래와 같이 AOP를 활용해 특정 메소드의 실행 로그를 데이터베이스에 저장하는 로직을 구현할 수 있습니다. 
+
+```java
+@Aspect
+@Component
+public class DiagnosisLoggingAspect {
+
+    @Autowired
+    private DiagnosisLogRepository diagnosisLogRepository;
+
+    @Pointcut("execution(* com.example.service.DiagnosisService..*(..))")
+    public void diagnosisMethods() {}
+
+    @Around("diagnosisMethods()")
+    public Object logDiagnosis(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+        Object proceed = joinPoint.proceed();
+        long executionTime = System.currentTimeMillis() - start;
+        
+        DiagnosisLog log = new DiagnosisLog();
+        log.setMethodName(joinPoint.getSignature().toString());
+        log.setExecutionTime(executionTime);
+        log.setTimestamp(new Date());
+        diagnosisLogRepository.save(log);
+        
+        return proceed;
+    }
+}
+```
+
+위 코드에서는 `DiagnosisService` 클래스의 메소드에 대해 실행 시간을 측정하고, 이를 `DiagnosisLogRepository`를 통해 데이터베이스에 저장하는 기능을 구현했습니다. 이를 통해 진단에 대한 실행 로그를 쉽게 관리할 수 있습니다.
 
 #### 실무에서 AOP 사용하기
 
@@ -66,11 +99,14 @@ public class LoggingAspect {
 #### 기술면접에서 나올 수 있는 질문과 답변 예시
 
 1. **AOP란 무엇인가요?**
+
    - AOP는 관점 지향 프로그래밍으로, 핵심 로직과 부가적인 기능(횡단 관심사)을 분리하여 관리하기 위한 프로그래밍 기법입니다. 주로 로깅, 트랜잭션 관리, 보안과 같은 공통 기능을 모듈화할 때 사용됩니다.
 
 2. **AOP를 사용하는 이유는 무엇인가요?**
+
    - AOP를 사용하면 중복 코드를 제거하고, 핵심 비즈니스 로직에 집중할 수 있으며, 유지보수성을 높일 수 있습니다. 공통 기능을 한 곳에서 관리함으로써 코드의 가독성과 재사용성을 높입니다.
 
 3. **AOP의 주요 개념에는 무엇이 있나요?**
+
    - Aspect, Join Point, Advice, Pointcut 등이 있으며, Aspect는 횡단 관심사를 모듈화한 것이고, Advice는 실제 동작을 정의하는 부분입니다.
 
